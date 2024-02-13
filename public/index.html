@@ -106,13 +106,13 @@
             if (message.type === 'walletCreated') {
                 wallets.push(message.data);
                 updateWalletsDisplay();
-                showToast("Wallet Created Successfully");
+                showToast(`Wallet ${message.data.xAddress} Created Successfully`);
             } else if (message.type === 'transactionCompleted') {
                 console.log("Transaction completed", message);
                 updateBalance(message.balances.sender.address, message.balances.sender.newBalance);
                 updateBalance(message.balances.recipient.address, message.balances.recipient.newBalance);
                 updateWalletsDisplay();
-                showToast("Transaction sent!");
+                showToast(`Transaction sent to ${recipientAddress}!`);
             }
             updateWalletsDisplay();
         };
@@ -141,6 +141,7 @@
         }
 
         document.getElementById('createWallet').addEventListener('click', async () => {
+            showToast("Creating Test Wallet");
             try {
                 // Replace 'http://localhost:3000/create_test_wallet' with your server's actual address if different
                 const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/create_test_wallet', {
@@ -167,7 +168,7 @@
             const recipientAddress = document.getElementById('recipientAddress').value;
             const amount = document.getElementById('amount').value;
 
-            showToast("Sending XRP...");
+            showToast(`Sending XRP to ${recipientAddress}`);
 
             try {
                 const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/send_xrp', {
