@@ -59,6 +59,23 @@
         .wallet-entry button:hover {
             background-color: #d32f2f;
         }
+ 
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 16px;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.5s, top 0.5s;
+            border-radius: 4px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +92,7 @@
         <button id="sendXrp">Send XRP</button>
     </div>
 
+    <div id="toastContainer"></div>
     <script>
         let wallets = [];
         const ws = new WebSocket('wss://xrpl-javascript-e453f7a753dd.herokuapp.com/');
@@ -87,10 +105,14 @@
 
             if (message.type === 'walletCreated') {
                 wallets.push(message.data);
+                updateWalletsDisplay();
+                showToast("Wallet Created Successfully");
             } else if (message.type === 'transactionCompleted') {
                 console.log("Transaction completed", message);
                 updateBalance(message.balances.sender.address, message.balances.sender.newBalance);
                 updateBalance(message.balances.recipient.address, message.balances.recipient.newBalance);
+                updateWalletsDisplay();
+                showToast("Transaction sent!");
             }
             updateWalletsDisplay();
         };
@@ -158,6 +180,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 console.log("Transaction submitted");
+                showToast("Sending XRP...");
             } catch (error) {
                 console.error('Error sending XRP:', error);
             }
@@ -165,6 +188,26 @@
 
         async function createWallet() { /* Your implementation */ }
         async function sendXrp() { /* Your implementation */ }
+
+        function showToast(message, duration = 3000) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.classList.add('toast');
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+
+            // Animate toast
+            setTimeout(() => {
+                toast.style.opacity = 1;
+            }, 100);
+
+            // Remove toast after duration
+            setTimeout(() => {
+                toast.style.opacity = 0;
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, duration);
+        }
+
     </script>
 </body>
 </html>
