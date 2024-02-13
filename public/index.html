@@ -128,8 +128,8 @@
                 <div class="wallet-entry">
                     <h3>Wallet ${index + 1}</h3>
                     <p>X Address: ${wallet.xAddress}</p>
-                    <p>Balance: ${wallet.balance}</p>
                     <p>Secret: ${wallet.secret}</p>
+                    <h1>Balance: ${wallet.balance}</h1>
                     <button onclick="removeWallet(${index})">Remove</button>
                 </div>
             `).join('');
