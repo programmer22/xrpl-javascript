@@ -167,6 +167,8 @@
             const recipientAddress = document.getElementById('recipientAddress').value;
             const amount = document.getElementById('amount').value;
 
+            showToast("Sending XRP...");
+
             try {
                 const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/send_xrp', {
                     method: 'POST',
@@ -180,7 +182,6 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 console.log("Transaction submitted");
-                showToast("Sending XRP...");
             } catch (error) {
                 console.error('Error sending XRP:', error);
             }
