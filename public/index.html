@@ -94,34 +94,37 @@
 
     <div id="toastContainer"></div>
     <script>
-        let wallets = [];
+        // Load wallets from localStorage or initialize as empty array
+        let wallets = JSON.parse(localStorage.getItem('wallets')) || [];
         const ws = new WebSocket('wss://xrpl-javascript-e453f7a753dd.herokuapp.com/');
-
+    
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
-
+    
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
-
+    
             if (message.type === 'walletCreated') {
                 wallets.push(message.data);
-                updateWalletsDisplay();
+                localStorage.setItem('wallets', JSON.stringify(wallets)); // Save updated wallets to localStorage
                 showToast(`Wallet ${message.data.xAddress} Created Successfully`);
             } else if (message.type === 'transactionCompleted') {
                 console.log("Transaction completed", message);
                 updateBalance(message.balances.sender.address, message.balances.sender.newBalance);
                 updateBalance(message.balances.recipient.address, message.balances.recipient.newBalance);
-                updateWalletsDisplay();
-                showToast(`Transaction sent to ${recipientAddress}!`);
+                localStorage.setItem('wallets', JSON.stringify(wallets)); // Update localStorage with new balances
+                showToast(`Transaction sent!`);
             }
             updateWalletsDisplay();
         };
-
+    
         function updateBalance(address, newBalance) {
-            const wallet = wallets.find(wallet => wallet.xAddress === address);
-            if (wallet) wallet.balance = newBalance;
+            const walletIndex = wallets.findIndex(wallet => wallet.xAddress === address);
+            if (walletIndex !== -1) {
+                wallets[walletIndex].balance = newBalance;
+            }
         }
-
+    
         function updateWalletsDisplay() {
             const walletInfoDiv = document.getElementById('walletInfo');
             walletInfoDiv.innerHTML = wallets.map((wallet, index) => `
@@ -129,87 +132,93 @@
                     <h3>Wallet ${index + 1}</h3>
                     <p>X Address: ${wallet.xAddress}</p>
                     <p>Secret: ${wallet.secret}</p>
-                    <h1>Balance: ${wallet.balance}</h1>
-                    <button onclick="removeWallet(${index})">Remove</button>
+                    <p>Balance: ${wallet.balance}</p>
+                    <button onclick="removeWallet('${wallet.xAddress}')">Remove</button>
                 </div>
             `).join('');
         }
-
-        function removeWallet(index) {
-            wallets.splice(index, 1);
+    
+        function removeWallet(xAddress) {
+            wallets = wallets.filter(wallet => wallet.xAddress !== xAddress);
+            localStorage.setItem('wallets', JSON.stringify(wallets)); // Update localStorage after removal
             updateWalletsDisplay();
+            showToast("Wallet removed");
         }
-
+    
         document.getElementById('createWallet').addEventListener('click', async () => {
-            showToast("Creating Test Wallet");
+            showToast("Creating Test Wallet...");
             try {
-                // Replace 'http://localhost:3000/create_test_wallet' with your server's actual address if different
                 const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/create_test_wallet', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    // No body is needed since we are just triggering the wallet creation
+                    headers: { 'Content-Type': 'application/json' }
                 });
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-
-                // The actual wallet creation response will be handled by the WebSocket message
-                console.log("Requested wallet creation");
+                // No need to manually add the wallet here, as the WebSocket message will handle it.
+                console.log("Wallet creation requested.");
             } catch (error) {
                 console.error('Error creating wallet:', error);
+                showToast('Error creating wallet', 4000); // Longer duration for errors
             }
         });
-
+    
+    
         document.getElementById('sendXrp').addEventListener('click', async () => {
             const senderSecret = document.getElementById('senderSecret').value;
             const recipientAddress = document.getElementById('recipientAddress').value;
             const amount = document.getElementById('amount').value;
-
-            showToast(`Sending XRP to ${recipientAddress}`);
-
+    
+            if (!senderSecret || !recipientAddress || !amount) {
+                showToast("Please fill all fields before sending XRP.", 4000);
+                return;
+            }
+    
+            showToast(`Sending XRP to ${recipientAddress}...`);
             try {
                 const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/send_xrp', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senderSecret, recipientAddress, amount })
                 });
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                console.log("Transaction submitted");
+                console.log("XRP transaction submitted.");
             } catch (error) {
                 console.error('Error sending XRP:', error);
+                showToast('Error sending XRP', 4000); // Longer duration for errors
             }
         });
-
-        async function createWallet() { /* Your implementation */ }
-        async function sendXrp() { /* Your implementation */ }
-
+    
         function showToast(message, duration = 3000) {
             const toastContainer = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.classList.add('toast');
+            toast.className = 'toast';
             toast.textContent = message;
+    
+            // Initially hide the toast
+            toast.style.opacity = 0;
             toastContainer.appendChild(toast);
-
-            // Animate toast
+    
+            // Make the toast visible
             setTimeout(() => {
                 toast.style.opacity = 1;
             }, 100);
-
-            // Remove toast after duration
+    
+            // Hide and remove the toast after the specified duration
             setTimeout(() => {
                 toast.style.opacity = 0;
                 toast.addEventListener('transitionend', () => toast.remove());
             }, duration);
         }
-
+    
+    
+        // Call updateWalletsDisplay on page load to show any stored wallets
+        window.onload = updateWalletsDisplay;
     </script>
+    
 </body>
 </html>
+
+
