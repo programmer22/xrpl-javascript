@@ -80,6 +80,9 @@ app.post('/send_xrp', async (req, res) => {
         const senderNewBalance = await getNewBalance(client, senderWallet.address);
         const recipientNewBalance = await getNewBalance(client, recipientAddress);
 
+        // Extracting transaction IDs from the signed transaction
+        const transactionIDs = signedTx.transactions.map(tx => tx.id);
+
         wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
@@ -87,7 +90,8 @@ app.post('/send_xrp', async (req, res) => {
                     balances: {
                         sender: { address: senderWallet.address, newBalance: senderNewBalance },
                         recipient: { address: recipientAddress, newBalance: recipientNewBalance },
-                    }
+                    },
+                    transactionIDs: transactionIDs // Sending transaction IDs in the WebSocket message
                 }));
             }
         });

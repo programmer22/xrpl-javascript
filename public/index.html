@@ -56,6 +56,26 @@
             border-radius: 5px;
         }
 
+        .transaction-list {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .transaction-list h4 {
+            margin-bottom: 5px;
+        }
+
+        .transaction-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .transaction-list li {
+            margin-bottom: 5px;
+        }
+
         #toastContainer {
             position: fixed;
             top: 20px;
@@ -99,10 +119,34 @@
         <button id="sendXrp">Send XRP</button>
     </div>
 
+    <div class="transaction-list" id="transactionList">
+        <h4>Transaction IDs:</h4>
+        <ul id="transactionIdList"></ul>
+    </div>
+
     <div id="toastContainer"></div>
     <script>
         // Load wallets from localStorage or initialize as empty array
         let wallets = JSON.parse(localStorage.getItem('wallets')) || [];
+
+        // Load transaction IDs from localStorage or initialize as empty array
+        let transactionIds = JSON.parse(localStorage.getItem('transactionIds')) || [];
+
+        function displayTransactionIds() {
+            const transactionIdList = document.getElementById('transactionIdList');
+            transactionIdList.innerHTML = transactionIds.map((id, index) => `
+                <li><strong>Transaction ${index + 1}:</strong> ${id}</li>
+            `).join('');
+        }
+
+        displayTransactionIds(); // Call the function to display transaction IDs on page load
+
+        // Function to add transaction IDs to localStorage and display them
+        function addTransactionIds(ids) {
+            transactionIds.push(...ids); // Add new transaction IDs to the existing array
+            localStorage.setItem('transactionIds', JSON.stringify(transactionIds)); // Save updated transaction IDs to localStorage
+            displayTransactionIds(); // Update the displayed list of transaction IDs
+        }
 
         //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
         const ws = new WebSocket('wss://xrpl-javascript-e453f7a753dd.herokuapp.com/');
@@ -110,6 +154,7 @@
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
 
+        // Modify the WebSocket message handling to include transaction IDs
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
 
@@ -123,6 +168,7 @@
                 updateBalance(message.balances.recipient.address, message.balances.recipient.newBalance);
                 localStorage.setItem('wallets', JSON.stringify(wallets)); // Update localStorage with new balances
                 showToast(`Transaction sent!`);
+                addTransactionIds(message.transactionIDs); // Add transaction IDs to the list
             }
             updateWalletsDisplay();
         };
