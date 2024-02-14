@@ -36,17 +36,18 @@ app.post('/create_test_wallet', async (req, res) => {
     try {
         await client.connect();
         const wallet = Wallet.generate();
-        await client.fundWallet(wallet);
+        const fundResult = await client.fundWallet(wallet);
         await client.disconnect();
 
-        wss.clients.forEach((client) => {
+        // Send the wallet information to all connected WebSocket clients
+        wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
                     type: 'walletCreated',
                     data: {
                         xAddress: wallet.address,
-                        balance: "10000000", // Example starting balance
-                        secret: wallet.seed,
+                        balance: fundResult.balance,
+                        secret: wallet.seed, // Caution with exposing secrets
                     }
                 }));
             }
@@ -54,10 +55,11 @@ app.post('/create_test_wallet', async (req, res) => {
 
         res.json({ xAddress: wallet.address, balance: "10000000", secret: wallet.seed });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error creating wallet:', error);
         res.status(500).json({ error: 'Failed to create wallet' });
     }
 });
+
 
 app.post('/send_xrp', async (req, res) => {
     const { senderSecret, recipientAddress, amount } = req.body;

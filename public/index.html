@@ -1,109 +1,278 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRP Ledger Frontend</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XRP Ledger Wallet Manager</title>
+<style>
+    body {
+        display: flex;
+        flex-direction: row; /* Align sidebar and content area side-by-side */
+        margin: 0;
+        height: 100vh; /* Full viewport height */
+        overflow: hidden; /* Prevent scrolling */
+    }
 
-        #title {
-            text-align: center;
-        }
+    .sidebar {
+        flex-shrink: 0;
+        height: 100vh;
+        background-color: #007bff;
+        color: white;
+        width: 250px; /* Adjusted for consistency, use percentage if you prefer */
+        min-width: 250px; /* Ensures the sidebar doesn't become too narrow */
+        text-align: center;
+        transition: width 0.5s ease; /* Smooth transition for width changes */
+    }
 
-        .create-wallet {
-            display: flex;
+    .sidebar h2 {
+        color: white;
+    }
+
+    .sidebar a {
+        color: white;
+        text-decoration: none;
+        display: block;
+        padding: 10px 0;
+    }
+
+    .sidebar a:hover {
+        background-color: #0056b3;
+    }
+
+    /* Ensure main wraps content and footer */
+    .content-and-footer {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Take up remaining space */
+        height: 100vh; /* Full viewport height */
+
+    }
+
+    .main-content {
+        
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .header {
+        background-color: #f8f9fa;
+        padding: 10px 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 24px;
+        color: #007bff;
+    }
+
+    .dashboard-section {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    input[type="text"], input[type="number"], button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+    .test-wallet-card {
+        margin-bottom: 20px;
+    }
+
+    /* Add styles for the wallet count display */
+    .wallet-count {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    #toastContainer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+
+    .toast {
+        background-color: #333;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    .wallet-entry {
+        border: 1px solid black; 
+        padding: 4px; 
+    }
+
+    .footer {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        padding: 20px;
+        font-size: 14px;
+        border-top: 1px solid #eaeaea;
+        text-align: center;
+        border: 2px solid black;
+    }
+
+    .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .footer-nav {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer-nav li {
+        margin: 0 15px;
+    }
+
+    .footer-nav a {
+        color: #007bff; /* Primary color for links */
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer-nav a:hover {
+        color: #0056b3; /* Darker shade on hover for interactivity */
+    }
+
+    .footer-brand {
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: bold;
+        color: #007bff; /* Brand color */
+    }
+
+    .footer-copy {
+        text-align: center;
+        margin-top: 20px;
+        color: #6c757d;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .footer-inner {
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
-        .test-wallet-card {
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 600px;
+        .footer-nav {
+            flex-direction: column;
+            margin-top: 20px;
         }
 
-        .wallet-entry {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .wallet-entry h3 {
-            margin-top: 0;
-        }
-
-        .wallet-entry p {
+        .footer-nav li {
             margin: 5px 0;
         }
 
-        .wallet-entry button {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .wallet-entry button:hover {
-            background-color: #d32f2f;
-        }
- 
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-        }
-        .toast {
-            background-color: #333;
-            color: white;
-            padding: 16px;
+        .footer-copy {
             margin-top: 10px;
-            opacity: 0;
-            transition: opacity 0.5s, top 0.5s;
-            border-radius: 4px;
-            text-align: center;
         }
-    </style>
+    }
+</style>
 </head>
 <body>
-    <h1 id="title">XRP Ledger Wallet Manager</h1>
-    <div class="create-wallet">
-        <button id="createWallet">Create Test Wallet</button>
-        <button id="createRealWallet">Create Real Wallet</button>
+    <div class="sidebar">
+        <h2>Dashboard</h2>
+        <a href="#">Dashboard</a>
+        <!-- Handles creating test / real wallets as well as viewing other accounts and viewing transaction ids -->
+        <a href="#">Create Wallet</a>
+        <!-- Moves your xrp from your real or test wallet to a saving wallet -->
+        <a href="#">Save</a>   
+        <!-- Takes your xrp real money and invests it  -->
+        <a href="#">Invest</a>
+        <!-- Shop with e-commerce and other retailers with your xrp -->
+        <a href="#">Shop</a>
+        <!-- Pay other people with your xrp  -->
+        <a href="#">Pay</a>
+        <!-- Stake your xrp -->
+        <a href="#">Stake</a>
     </div>
-    <div class="test-wallet-card" id="walletInfo"></div>
-    <div class="send-xrp-form">
-        <input type="text" id="senderSecret" placeholder="Sender's Secret">
-        <input type="text" id="recipientAddress" placeholder="Recipient's Address">
-        <input type="number" id="amount" placeholder="Amount of XRP">
-        <button id="sendXrp">Send XRP</button>
+    <div class="content-and-footer">
+        <div class="main-content">
+            <div class="header">
+                <h1>XRP Ledger Wallet Manager</h1>
+            </div>
+            <div class="dashboard-section">
+                <h2>Create Wallet</h2>
+                <button id="createWallet">Create Test Wallet</button>
+                <button id="createRealWallet">Create Real Wallet</button>
+            </div>
+            <div class="wallet-count">Total Wallets: <span id="walletCount">0</span></div>
+            <div class="dashboard-section test-wallet-card" id="walletInfo">
+                <!-- Wallet information will be loaded here -->
+            </div>
+            <div class="dashboard-section">
+                <h2>Send XRP</h2>
+                <input type="text" id="senderSecret" placeholder="Sender's Secret">
+                <input type="text" id="recipientAddress" placeholder="Recipient's Address">
+                <input type="number" id="amount" placeholder="Amount of XRP">
+                <button id="sendXrp">Send XRP</button>
+            </div>
+            <div class="footer">
+                <div class="footer-inner">
+                    <div class="footer-brand">XRP Ledger Wallet Manager</div>
+                    <ul class="footer-nav">
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Help</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <p class="footer-copy">&copy; 2024 XRP Ledger Wallet Manager. All rights reserved.</p>
+            </div>
+        </div>
     </div>
-
+    
     <div id="toastContainer"></div>
+    
     <script>
         // Load wallets from localStorage or initialize as empty array
         let wallets = JSON.parse(localStorage.getItem('wallets')) || [];
-        const ws = new WebSocket('wss://xrpl-javascript-e453f7a753dd.herokuapp.com/');
-    
+        const ws = new WebSocket('ws://localhost:3000');
+
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
-    
+
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
-    
+
             if (message.type === 'walletCreated') {
                 wallets.push(message.data);
                 localStorage.setItem('wallets', JSON.stringify(wallets)); // Save updated wallets to localStorage
@@ -117,14 +286,14 @@
             }
             updateWalletsDisplay();
         };
-    
+
         function updateBalance(address, newBalance) {
             const walletIndex = wallets.findIndex(wallet => wallet.xAddress === address);
             if (walletIndex !== -1) {
                 wallets[walletIndex].balance = newBalance;
             }
         }
-    
+
         function updateWalletsDisplay() {
             const walletInfoDiv = document.getElementById('walletInfo');
             walletInfoDiv.innerHTML = wallets.map((wallet, index) => `
@@ -136,19 +305,22 @@
                     <button onclick="removeWallet('${wallet.xAddress}')">Remove</button>
                 </div>
             `).join('');
+
+            // Call updateWalletCount here to ensure the wallet count and scrollability are updated every time the display is updated
+            updateWalletCount();
         }
-    
+
         function removeWallet(xAddress) {
             wallets = wallets.filter(wallet => wallet.xAddress !== xAddress);
             localStorage.setItem('wallets', JSON.stringify(wallets)); // Update localStorage after removal
             updateWalletsDisplay();
             showToast("Wallet removed");
         }
-    
+
         document.getElementById('createWallet').addEventListener('click', async () => {
             showToast("Creating Test Wallet...");
             try {
-                const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/create_test_wallet', {
+                const response = await fetch('http://localhost:3000/create_test_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -162,21 +334,36 @@
                 showToast('Error creating wallet', 4000); // Longer duration for errors
             }
         });
-    
-    
+
+        function updateWalletCount() {
+            const walletCount = document.getElementById('walletInfo').children.length;
+            document.getElementById('walletCount').innerText = walletCount;
+
+            // Update .test-wallet-card to be scrollable if more than 3 wallets
+            const walletInfoDiv = document.getElementById('walletInfo');
+            if (walletCount >= 2) {
+                walletInfoDiv.style.overflowY = 'auto';
+                walletInfoDiv.style.maxHeight = '300px';
+            } else {
+                walletInfoDiv.style.overflowY = 'hidden';
+                walletInfoDiv.style.maxHeight = 'none';
+            }
+        }
+
+
         document.getElementById('sendXrp').addEventListener('click', async () => {
             const senderSecret = document.getElementById('senderSecret').value;
             const recipientAddress = document.getElementById('recipientAddress').value;
             const amount = document.getElementById('amount').value;
-    
+
             if (!senderSecret || !recipientAddress || !amount) {
                 showToast("Please fill all fields before sending XRP.", 4000);
                 return;
             }
-    
+
             showToast(`Sending XRP to ${recipientAddress}...`);
             try {
-                const response = await fetch('https://xrpl-javascript-e453f7a753dd.herokuapp.com/send_xrp', {
+                const response = await fetch('http://localhost:3000/send_xrp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senderSecret, recipientAddress, amount })
@@ -190,34 +377,34 @@
                 showToast('Error sending XRP', 4000); // Longer duration for errors
             }
         });
-    
+
         function showToast(message, duration = 3000) {
             const toastContainer = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = 'toast';
             toast.textContent = message;
-    
+
             // Initially hide the toast
             toast.style.opacity = 0;
             toastContainer.appendChild(toast);
-    
+
             // Make the toast visible
             setTimeout(() => {
                 toast.style.opacity = 1;
             }, 100);
-    
+
             // Hide and remove the toast after the specified duration
             setTimeout(() => {
                 toast.style.opacity = 0;
                 toast.addEventListener('transitionend', () => toast.remove());
             }, duration);
         }
-    
-    
+
+
         // Call updateWalletsDisplay on page load to show any stored wallets
         window.onload = updateWalletsDisplay;
     </script>
-    
+
 </body>
 </html>
 
