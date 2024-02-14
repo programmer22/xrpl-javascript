@@ -103,7 +103,9 @@
     <script>
         // Load wallets from localStorage or initialize as empty array
         let wallets = JSON.parse(localStorage.getItem('wallets')) || [];
-        const ws = new WebSocket('wss://https://xrpl-javascript-e453f7a753dd.herokuapp.com/');
+
+        //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
+        const ws = new WebSocket('wss://xrpl-javascript-e453f7a753dd.herokuapp.com/');
 
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
