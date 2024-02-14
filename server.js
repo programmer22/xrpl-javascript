@@ -73,15 +73,19 @@ app.post('/send_xrp', async (req, res) => {
             Amount: xrpToDrops(amount.toString()),
             Destination: recipientAddress,
         });
-        
+
+        console.log("Prepared transaction:", preparedTx); // Add this line for debugging
+
         const signedTx = senderWallet.sign(preparedTx);
+        console.log("Signed transaction:", signedTx); // Add this line for debugging
+
+        const transactionIDs = signedTx?.transactions?.map(tx => tx.id) || [];
+        console.log("Transaction IDs:", signedTx.hash); // Add this line for debugging
+
         const txResponse = await client.submitAndWait(signedTx.tx_blob);
 
         const senderNewBalance = await getNewBalance(client, senderWallet.address);
         const recipientNewBalance = await getNewBalance(client, recipientAddress);
-
-        // Extracting transaction IDs from the signed transaction
-        const transactionIDs = signedTx.transactions.map(tx => tx.id);
 
         wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
@@ -91,7 +95,7 @@ app.post('/send_xrp', async (req, res) => {
                         sender: { address: senderWallet.address, newBalance: senderNewBalance },
                         recipient: { address: recipientAddress, newBalance: recipientNewBalance },
                     },
-                    transactionIDs: transactionIDs // Sending transaction IDs in the WebSocket message
+                    transactionIDs: signedTx.hash // Sending transaction IDs in the WebSocket message
                 }));
             }
         });
@@ -103,6 +107,7 @@ app.post('/send_xrp', async (req, res) => {
         res.status(500).json({ error: 'Failed to send XRP' });
     }
 });
+
 
 server.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
