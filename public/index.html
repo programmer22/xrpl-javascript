@@ -1,3 +1,9 @@
+<!-- Create a table of the transaction ids. One that represents this data:
+
+Hash (transaction hash), from (xAddress from account ), to (xAddress to account), amount transacted (in XRP which is converted from drops), date (m/d/y or 01/22/2024), transaction fee (in drops), result (sucess or fail)
+
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,10 +18,32 @@
             padding: 20px;
             color: #333;
         }
+        .title-center {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            margin-right: 10px;
+        }
 
         #title {
             text-align: center;
             color: #007bff;
+        }
+
+        /* Dedicated for logo image spinning */
+        @keyframes spinY {
+            from {
+                transform: rotateY(0deg);
+            }
+            to {
+                transform: rotateY(360deg);
+            }
+        }
+
+        .spinning {
+            animation: spinY 1s infinite linear;
         }
 
         .create-wallet, .send-xrp-form {
@@ -112,7 +140,10 @@
     </style>
 </head>
 <body>
-    <h1 id="title">XRP Ledger Wallet Manager</h1>
+    <div class="title-center">
+        <img id="imageToSpin" src="xrp-gold.png" alt="Spinnable Image" class="spinning" style="width: 50px; height: auto;">
+        <h1 id="title">XRP Ledger Wallet Manager</h1>
+    </div>
     <div class="create-wallet">
         <button id="createWallet">Create Test Wallet</button>
         <button id="createRealWallet">Create Real Wallet</button>
@@ -297,6 +328,7 @@
 
         // Call updateWalletsDisplay on page load to show any stored wallets
         window.onload = updateWalletsDisplay;
+        
     </script>
 
 </body>
