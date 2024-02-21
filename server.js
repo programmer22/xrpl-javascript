@@ -61,42 +61,49 @@ app.post('/create_test_wallet', async (req, res) => {
 
 app.post('/send_xrp', async (req, res) => {
     const { senderSecret, recipientAddress, amount } = req.body;
-    const transactionResult = {}; // This result simulates more complete personal resource information
+    const client = new Client("wss://s.altnet.rippletest.net:51233");
 
     try {
         await client.connect();
         const senderWallet = Wallet.fromSecret(senderSecret);
-
-        const sequence = (await client.getNextValidSequenceNumber(senderWallet.address)).sequence;
-        const fee = await client.getFee();
-
-        const transaction = {
-            TransactionType: 'Payment',
-            Account: senderWallet.address,
-            Destination: recipientAddress,
-            Amount: xrpToDrops(amount.toString()),
-            Flags: 2147483648, // Tack on all other resolved configurations
-            LastLedgerSequence: sequence + 5, // The maximum ledger version the transaction can be included in
-            Fee: fee,
-            Sequence: sequence
-        };
-
-        const signedTransaction = senderWallet.sign(transaction);
-        const result = await client.submitAndWait(signedTransaction.tx_blob);
         
-        // Sending more personalized business answer back to the web page
-        res.json({
-            hash: signedTransaction.hash,
-            from: senderWallet.classicAddress,
-            to: recipientAddress,
-            amount,
-            date: new Date().toLocaleDateString("en-US"),
-            transactionFee: fee,
-            result: result.resultCode
+        const preparedTx = await client.autofill({
+            TransactionType: "Payment",
+            Account: senderWallet.address,
+            Amount: xrpToDrops(amount.toString()),
+            Destination: recipientAddress,
         });
 
+        console.log("Prepared transaction:", preparedTx); // Add this line for debugging
+
+        const signedTx = senderWallet.sign(preparedTx);
+        console.log("Signed transaction:", signedTx); // Add this line for debugging
+
+        const transactionIDs = signedTx?.transactions?.map(tx => tx.id) || [];
+        console.log("Transaction IDs:", signedTx.hash); // Add this line for debugging
+
+        const txResponse = await client.submitAndWait(signedTx.tx_blob);
+
+        const senderNewBalance = await getNewBalance(client, senderWallet.address);
+        const recipientNewBalance = await getNewBalance(client, recipientAddress);
+
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    type: 'transactionCompleted',
+                    balances: {
+                        sender: { address: senderWallet.address, newBalance: senderNewBalance },
+                        recipient: { address: recipientAddress, newBalance: recipientNewBalance },
+                    },
+                    transactionIDs: signedTx.hash // Sending transaction IDs in the WebSocket message
+                }));
+            }
+        });
+
+        await client.disconnect();
+        res.json({ txResponse, senderNewBalance, recipientNewBalance });
     } catch (error) {
-        console.error('Transaction sending error:', error);
+        console.error('Error:', error);
         res.status(500).json({ error: 'Failed to send XRP' });
     }
 });
