@@ -108,6 +108,42 @@ app.post('/send_xrp', async (req, res) => {
     }
 });
 
+app.get('/fetch_transactions', async (req, res) => {
+    const { account } = req.query; // Assuming you pass the account address as a query parameter
+
+    try {
+        await client.connect();
+        const response = await client.request({
+            command: 'account_tx',
+            account: account,
+            limit: 20, // Adjust based on how many transactions you want to fetch
+            ledger_index_min: -1,
+            ledger_index_max: -1,
+        });
+
+        const transactions = response.result.transactions.map(tx => {
+            // Transform the data here to match your frontend needs
+            return {
+                hash: tx.tx.hash,
+                from: tx.tx.Account,
+                to: tx.tx.Destination,
+                amountTransacted: dropsToXrp(tx.tx.Amount),
+                date: new Date(tx.tx.date).toLocaleDateString("en-US"),
+                transactionFee: dropsToXrp(tx.tx.Fee),
+                result: tx.meta.TransactionResult,
+            };
+        });
+
+        res.json(transactions);
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        res.status(500).json({ error: 'Failed to fetch transactions' });
+    } finally {
+        await client.disconnect();
+    }
+});
+
+
 
 
 server.listen(port, () => {
