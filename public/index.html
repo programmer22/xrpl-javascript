@@ -260,40 +260,6 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         }
 
 
-        async function fetchAndDisplayTransactions() {
-
-            try {
-                const response = await fetch("https://xrpl-4866d5c10be3.herokuapp.com/fetch_transactions", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-                const transactions = await response.json();
-
-                const transactionListElement = document.getElementById('transactionIdList');
-                transactionListElement.innerHTML = ''; // Clear existing content
-
-                transactions.forEach(tx => {
-                    const listItem = document.createElement('li');
-                    listItem.innerHTML = `
-                        <strong>Hash:</strong> ${tx.hash}, 
-                        <strong>From:</strong> ${tx.from}, 
-                        <strong>To:</strong> ${tx.to}, 
-                        <strong>Amount Transacted:</strong> ${tx.amountTransacted} XRP, 
-                        <strong>Date:</strong> ${tx.date}, 
-                        <strong>Transaction Fee:</strong> ${tx.transactionFee} drops, 
-                        <strong>Result:</strong> ${tx.result}
-                    `;
-                    transactionListElement.appendChild(listItem);
-                });
-            } catch (error) {
-                console.error('Failed to fetch transactions:', error);
-            }
-        }
-
-
-
 
         //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
         const ws = new WebSocket('wss://xrpl-4866d5c10be3.herokuapp.com');
@@ -422,10 +388,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
 
         // Call updateWalletsDisplay on page load to show any stored wallets
-        window.onload = function() {
-            updateWalletsDisplay;
-            fetchAndDisplayTransactions();
-        }
+        window.onload = updateWalletsDisplay;
     </script>
 </body>
 </html>
