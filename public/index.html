@@ -261,7 +261,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
 
         //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
-        const ws = new WebSocket('ws://localhost:3000');
+        const ws = new WebSocket('wss://https://xrpl-4866d5c10be3.herokuapp.com');
 
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
@@ -320,7 +320,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         document.getElementById('createWallet').addEventListener('click', async () => {
             showToast("Creating Test Wallet...");
             try {
-                const response = await fetch('http://localhost:3000/create_test_wallet', {
+                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.com/create_test_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -348,7 +348,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
             showToast(`Sending XRP to ${recipientAddress}...`);
             try {
-                const response = await fetch('http://localhost:3000/send_xrp', {
+                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.com/send_xrp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senderSecret, recipientAddress, amount })
