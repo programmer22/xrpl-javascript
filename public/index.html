@@ -256,6 +256,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
             transactionIds = []; // Reset transaction IDs array
             localStorage.setItem('transactionIds', JSON.stringify(transactionIds)); // Save updated transaction IDs to localStorage
             displayTransactionIds(); // Update the displayed list of transaction IDs
+            showToast('Transaction history cleared');
         }
 
 
