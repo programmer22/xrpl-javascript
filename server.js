@@ -45,7 +45,7 @@ app.post('/create_test_wallet', async (req, res) => {
                     type: 'walletCreated',
                     data: {
                         xAddress: wallet.address,
-                        balance: "10000000", // Example starting balance
+                        balance: wallet.balance, // Example starting balance
                         secret: wallet.seed,
                     }
                 }));
