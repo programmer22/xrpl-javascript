@@ -7,139 +7,187 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XRP Ledger Wallet Manager</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .title-center {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            margin-right: 10px;
-        }
-
-        #title {
-            text-align: center;
-            color: #007bff;
-        }
-
-        /* Dedicated for logo image spinning */
-        @keyframes spinY {
-            from {
-                transform: rotateY(0deg);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XRP Ledger Wallet Manager</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f5f5;
+                margin: 0;
+                padding: 20px;
+                color: #333;
             }
-            to {
-                transform: rotateY(360deg);
+            .marquee {
+                overflow: hidden;
+                position: relative;
+                background-color: #007bff;
+                width: 100%;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                color: gold;
+                font-size: 20px;
+                font-weight: bolder;
             }
-        }
-
-        .spinning {
-            animation: spinY 1s infinite linear;
-        }
-
-        .create-wallet, .send-xrp-form {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .test-wallet-card, .send-xrp-form {
-            margin: 0 auto;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 600px;
-            background-color: white;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .transaction-list {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .transaction-list h4 {
-            margin-bottom: 5px;
-        }
-
-        .transaction-list ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .transaction-list li {
-            margin-bottom: 5px;
-        }
-
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        .toast {
-            background-color: #333;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        .toast.show {
-            opacity: 1;
-        }
-
-        @media (max-width: 768px) {
-            .wallet-entry p {
-                font-size: 12px; /* Adjust font size for smaller screens */
+            .marquee-content {
+                position: absolute;
+                white-space: nowrap;
+                animation: slideText linear infinite;
+                animation-duration: calc(10s + 2s);
             }
-        }
-
-        @media (max-width: 768px) {
+            @keyframes slideText {
+                from { transform: translateX(100%); }
+                to { transform: translateX(-100%); }
+            }
+            .title-center {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            #title {
+                text-align: center;
+                color: #007bff;
+            }
+            .spinning {
+                animation: spinY 1s infinite linear;
+            }
+            @keyframes spinY {
+                from { transform: rotateY(0deg); }
+                to { transform: rotateY(360deg); }
+            }
+            .create-wallet, .send-xrp-form {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            button {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+            button:hover {
+                background-color: #0056b3;
+            }
+            .test-wallet-card, .send-xrp-form {
+                margin: 0 auto;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                max-width: 600px;
+                background-color: white;
+            }
+            input[type="text"], input[type="number"] {
+                width: calc(100% - 22px);
+                padding: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
             .transaction-list {
-                font-size: 12px;
+                margin-top: 20px;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
             }
-        }
+            .transaction-list ul {
+                list-style: none;
+                padding: 0;
+            }
+            .transaction-list li {
+                margin-bottom: 5px;
+            }
+            #toastContainer {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+            }
+            .toast {
+                background-color: #333;
+                color: white;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 10px;
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+            }
+            .toast.show {
+                opacity: 1;
+            }
+            /* New Styles for Wallet Display */
+            .wallet-entry {
+                border: 1px solid #e0e0e0;
+                padding: 15px;
+                border-radius: 8px;
+                background-color: #f9f9f9;
+                margin-bottom: 15px; /* Space between wallet entries */
+            }
+            .wallet-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .remove-wallet-btn {
+                background-color: #ff4d4f;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+            .remove-wallet-btn:hover {
+                background-color: #ff7875;
+            }
+            @media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
 
-    </style>
+                .title-center, .create-wallet, .send-xrp-form {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .create-wallet button, .send-xrp-form button {
+                    width: 100%; /* Make buttons full width */
+                }
+
+                .test-wallet-card, .send-xrp-form, .transaction-list {
+                    width: 100%; /* Full width for smaller devices */
+                    max-width: none; /* Remove max-width constraint */
+                }
+
+                input[type="text"], input[type="number"] {
+                    width: 100%; /* Adjust input fields to be full width */
+                }
+
+                .marquee-content {
+                    animation-duration: calc(15s + 2s); /* Slow down the marquee on smaller screens for better readability */
+                }
+
+                .wallet-header {
+                    flex-direction: column;
+                    gap: 10px; /* Add space between the title and the remove button on smaller screens */
+                }
+            }
+        </style>
 </head>
 <body>
+    <div class="marquee">
+        <div class="marquee-content">
+          XRP Current Price: $0.25 | XRP Market Cap: $11.3B | XRP 24hr Volume: $1.2B | XRP Circulating Supply: 45.3B
+        </div>
+    </div>
     <div class="title-center">
         <img id="imageToSpin" src="xrp-gold.png" alt="Spinnable Image" class="spinning" style="width: 50px; height: auto;">
         <h1 id="title">XRP Ledger Wallet Manager</h1>
@@ -161,9 +209,9 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         <ul id="transactionIdList"></ul>
         <button onclick="clearTransactionIds()">Clear Transaction History</button>
     </div>
-    
 
     <div id="toastContainer"></div>
+
     <script>
         // Load wallets from localStorage or initialize as empty array
         let wallets = JSON.parse(localStorage.getItem('wallets')) || [];
@@ -241,14 +289,17 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
             const walletInfoDiv = document.getElementById('walletInfo');
             walletInfoDiv.innerHTML = wallets.map((wallet, index) => `
                 <div class="wallet-entry">
-                    <h3>Wallet ${index + 1}</h3>
-                    <p>X Address: ${wallet.xAddress}</p>
-                    <p>Secret: ${wallet.secret}</p>
-                    <p>Balance: ${wallet.balance}</p>
-                    <button onclick="removeWallet('${wallet.xAddress}')">Remove</button>
+                    <div class="wallet-header">
+                        <h3>Wallet ${index + 1}</h3>
+                        <button class="remove-wallet-btn" onclick="removeWallet('${wallet.xAddress}')">Remove</button>
+                    </div>
+                    <p><strong>X Address:</strong> ${wallet.xAddress}</p>
+                    <p><strong>Secret:</strong> ${wallet.secret}</p>
+                    <p><strong>Balance:</strong> ${wallet.balance} XRP</p>
                 </div>
             `).join('');
         }
+
 
         function removeWallet(xAddress) {
             wallets = wallets.filter(wallet => wallet.xAddress !== xAddress);
@@ -328,10 +379,6 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
         // Call updateWalletsDisplay on page load to show any stored wallets
         window.onload = updateWalletsDisplay;
-        
     </script>
-
 </body>
 </html>
-
-
