@@ -52,7 +52,7 @@ app.post('/create_test_wallet', async (req, res) => {
             }
         });
 
-        res.json({ xAddress: wallet.address, balance: "10000000", secret: wallet.seed });
+        res.json({ xAddress: wallet.address, balance: wallet.balance, secret: wallet.seed });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Failed to create wallet' });
