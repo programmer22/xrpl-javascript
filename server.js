@@ -47,10 +47,11 @@ app.post('/create_test_wallet', async (req, res) => {
                         xAddress: wallet.address,
                         balance: "10000000", // Example starting balance
                         secret: wallet.seed,
+                        walletType: 'test' // Specify wallet type
                     }
                 }));
             }
-        });
+        });        
 
         res.json({ xAddress: wallet.address, balance: "10000000", secret: wallet.seed });
     } catch (error) {
@@ -107,6 +108,53 @@ app.post('/send_xrp', async (req, res) => {
         res.status(500).json({ error: 'Failed to send XRP' });
     }
 });
+
+
+app.post('/create_real_wallet', async (req, res) => {
+    // Replace the placeholder URL with the actual Mainnet WebSocket URL
+    const client = new Client("wss://s1.ripple.com");
+
+    try {
+        await client.connect();
+        const wallet = Wallet.generate();
+
+        // Since there's no direct method to fund a wallet on the Mainnet through the API,
+        // the wallet needs to be funded manually or through another transaction.
+
+        // Broadcasting the wallet creation through WebSocket to connected clients
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    type: 'walletCreated',
+                    data: {
+                        xAddress: wallet.address,
+                        secret: wallet.seed,
+                        walletType: 'real' // Specify wallet type
+                    }
+                }));
+            }
+        });        
+
+        await client.disconnect();
+
+        // Respond with the wallet details (excluding balance for the Mainnet wallet)
+        res.json({ xAddress: wallet.address, secret: wallet.seed });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Failed to create real wallet' });
+    }
+});
+
+app.post('/fund_wallet', async (req, res) => {
+    const { xAddress } = req.query; // Assuming the X address is passed as a query parameter
+    // Implement your logic for funding the wallet or initiating the login flow here
+    // This is highly dependent on your application's architecture and requirements
+    console.log(`Funding wallet: ${xAddress}`);
+
+    // Dummy response for demonstration purposes
+    res.json({ success: true, message: `Wallet ${xAddress} funded successfully.` });
+});
+
 
 server.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);

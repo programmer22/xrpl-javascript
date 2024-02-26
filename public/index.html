@@ -4,6 +4,18 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
 -->
 
+
+<!-- XRP-GOLD icon credit attribution below -->
+<!-- <a href="https://www.flaticon.com/free-icons/xrp" title="xrp icons">Xrp icons created by YI-PIN - Flaticon</a> -->
+
+
+<!-- Write it to where you can load a wallet, view that wallets transactions using ledger api -->
+<!-- Also create a searchbar where you can search transcation ids and public addresses to peoples accounts -->
+<!-- Create a debit card that links to this dashboard -->
+<!-- Connect to binance api so I can grab real time data of xrp, market cap, 24hr volume and circulating supply -->
+<!-- Transfer data to redux when offline that way you can access your data and perform offline reloads. When connection resumes, your data will be updated via redux to xrpl.  -->
+<!-- Display a green checkmark next to xrp ledger wallet manager when connected, when disconnected, show a red x but store most recent data in redux so you can work with it offline -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -199,7 +211,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
     </div>
     <div class="title-center">
         <img id="imageToSpin" src="xrp-gold.png" alt="Spinnable Image" class="spinning" style="width: 50px; height: auto;">
-        <h1 id="title">XRP Ledger Wallet Manager</h1>
+        <h1 id="title">XRPL Ledger Wallet Manager</h1>
     </div>
     <div class="create-wallet">
         <button id="createWallet">Create Test Wallet</button>
@@ -262,7 +274,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
 
         //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
-        const ws = new WebSocket('wss://xrpl-4866d5c10be3.herokuapp.com');
+        const ws = new WebSocket('ws://localhost:3000');
 
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
@@ -296,19 +308,49 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         }
 
         function updateWalletsDisplay() {
-            const walletInfoDiv = document.getElementById('walletInfo');
-            walletInfoDiv.innerHTML = wallets.map((wallet, index) => `
-                <div class="wallet-entry">
-                    <div class="wallet-header">
-                        <h3>Wallet ${index + 1}</h3>
-                        <button class="remove-wallet-btn" onclick="removeWallet('${wallet.xAddress}')">Remove</button>
-                    </div>
-                    <p><strong>X Address:</strong> ${wallet.xAddress}</p>
-                    <p><strong>Secret:</strong> ${wallet.secret}</p>
-                    <p><strong>Balance:</strong> ${wallet.balance} XRP</p>
-                </div>
-            `).join('');
+    const walletInfoDiv = document.getElementById('walletInfo');
+    walletInfoDiv.innerHTML = wallets.map((wallet, index) => {
+        let fundWalletButton = '';
+        if (wallet.walletType === 'real' && wallet.balance === undefined) {
+            fundWalletButton = `<button class="fund-wallet-btn" onclick="fundWallet('${wallet.xAddress}')">Fund Wallet</button>`;
         }
+        return `
+            <div class="wallet-entry">
+                <div class="wallet-header">
+                    <h3>Wallet ${index + 1}</h3>
+                    <button class="remove-wallet-btn" onclick="removeWallet('${wallet.xAddress}')">Remove</button>
+                </div>
+                <p><strong>X Address:</strong> ${wallet.xAddress}</p>
+                <p><strong>Secret:</strong> ${wallet.secret}</p>
+                <p><strong>Balance:</strong> ${wallet.balance ? wallet.balance + ' XRP' : 'Undefined'}</p>
+                ${fundWalletButton}
+            </div>
+        `;
+    }).join('');
+}
+
+// Function to handle "Fund Wallet" button click
+function fundWallet(xAddress) {
+    console.log("Funding wallet: " + xAddress);
+    // Implement the logic to call the login API or a backend endpoint for funding the wallet
+    // Example: Making a request to a hypothetical '/fund_wallet' endpoint
+    fetch(`http://localhost:3000/fund_wallet?xAddress=${xAddress}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Wallet funded:', data);
+        showToast(`Wallet ${xAddress} funded successfully`);
+        // Update wallet balance locally or re-fetch wallets to reflect the new balance
+    })
+    .catch(error => {
+        console.error('Error funding wallet:', error);
+        showToast('Error funding wallet', 4000); // Longer duration for errors
+    });
+}
+
+
 
 
         function removeWallet(xAddress) {
@@ -321,7 +363,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         document.getElementById('createWallet').addEventListener('click', async () => {
             showToast("Creating Test Wallet...");
             try {
-                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.com/create_test_wallet', {
+                const response = await fetch('http://localhost:3000/create_test_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -349,7 +391,7 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
 
             showToast(`Sending XRP to ${recipientAddress}...`);
             try {
-                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.com/send_xrp', {
+                const response = await fetch('http://localhost:3000/send_xrp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senderSecret, recipientAddress, amount })
@@ -363,6 +405,25 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
                 showToast('Error sending XRP', 4000); // Longer duration for errors
             }
         });
+
+        document.getElementById('createRealWallet').addEventListener('click', async () => {
+            showToast("Creating Real Wallet...");
+            try {
+                const response = await fetch('http://localhost:3000/create_real_wallet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                // The WebSocket message will handle adding the wallet to the UI.
+                console.log("Real Wallet creation requested.");
+            } catch (error) {
+                console.error('Error creating real wallet:', error);
+                showToast('Error creating real wallet', 4000); // Use a longer duration for errors
+            }
+        });
+
 
         function showToast(message, duration = 3000) {
             const toastContainer = document.getElementById('toastContainer');
