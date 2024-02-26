@@ -271,33 +271,38 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
             showToast('Transaction history cleared');
         }
 
-
-
         //If using backend like heroku endpoint, then change to wss for secure WebSocket connection, otherwise for development use ws
-        const ws = new WebSocket('ws://localhost:3000');
+        const ws = new WebSocket('wss://xrpl-4866d5c10be3.herokuapp.com');
 
         ws.onopen = () => console.log('WebSocket connection established');
         ws.onerror = (error) => console.log('WebSocket Error: ', error);
 
         // Modify the WebSocket message handling to include transaction ID
-        ws.onmessage = (event) => {
+        ws.onmessage = function(event) {
             const message = JSON.parse(event.data);
 
             if (message.type === 'walletCreated') {
                 wallets.push(message.data);
-                localStorage.setItem('wallets', JSON.stringify(wallets)); // Save updated wallets to localStorage
+                localStorage.setItem('wallets', JSON.stringify(wallets));
                 showToast(`Wallet ${message.data.xAddress} Created Successfully`);
-            } else if (message.type === 'transactionCompleted') {
+            } 
+            else if (message.type === 'xrpData') {
+                // Correctly accessing the data from the message
+                const { price, marketCap, volume24h, circulatingSupply } = message.data; // Ensure this matches the structure sent by your backend
+                document.querySelector('.marquee-content').textContent =
+                    `XRP Current Price: $${price.toFixed(2)} | XRP Market Cap: $${marketCap.toFixed(2)}B | XRP 24hr Volume: $${volume24h.toFixed(2)}B | XRP Circulating Supply: ${circulatingSupply.toFixed(2)}B`;
+            }
+            else if (message.type === 'transactionCompleted') {
                 console.log("Transaction completed", message);
                 updateBalance(message.balances.sender.address, message.balances.sender.newBalance);
                 updateBalance(message.balances.recipient.address, message.balances.recipient.newBalance);
-                localStorage.setItem('wallets', JSON.stringify(wallets)); // Update localStorage with new balances
+                localStorage.setItem('wallets', JSON.stringify(wallets));
                 showToast(`Transaction sent!`);
-                // Add transaction ID to the list
                 addTransactionId(message.transactionIDs);
             }
             updateWalletsDisplay();
         };
+
 
 
         function updateBalance(address, newBalance) {
@@ -308,47 +313,47 @@ Hash (transaction hash), from (xAddress from account ), to (xAddress to account)
         }
 
         function updateWalletsDisplay() {
-    const walletInfoDiv = document.getElementById('walletInfo');
-    walletInfoDiv.innerHTML = wallets.map((wallet, index) => {
-        let fundWalletButton = '';
-        if (wallet.walletType === 'real' && wallet.balance === undefined) {
-            fundWalletButton = `<button class="fund-wallet-btn" onclick="fundWallet('${wallet.xAddress}')">Fund Wallet</button>`;
+            const walletInfoDiv = document.getElementById('walletInfo');
+            walletInfoDiv.innerHTML = wallets.map((wallet, index) => {
+                let fundWalletButton = '';
+                if (wallet.walletType === 'real' && wallet.balance === undefined) {
+                    fundWalletButton = `<button class="fund-wallet-btn" onclick="fundWallet('${wallet.xAddress}')">Fund Wallet</button>`;
+                }
+                return `
+                    <div class="wallet-entry">
+                        <div class="wallet-header">
+                            <h3>Wallet ${index + 1}</h3>
+                            <button class="remove-wallet-btn" onclick="removeWallet('${wallet.xAddress}')">Remove</button>
+                        </div>
+                        <p><strong>X Address:</strong> ${wallet.xAddress}</p>
+                        <p><strong>Secret:</strong> ${wallet.secret}</p>
+                        <p><strong>Balance:</strong> ${wallet.balance ? wallet.balance + ' XRP' : 'Undefined'}</p>
+                        ${fundWalletButton}
+                    </div>
+                `;
+            }).join('');
         }
-        return `
-            <div class="wallet-entry">
-                <div class="wallet-header">
-                    <h3>Wallet ${index + 1}</h3>
-                    <button class="remove-wallet-btn" onclick="removeWallet('${wallet.xAddress}')">Remove</button>
-                </div>
-                <p><strong>X Address:</strong> ${wallet.xAddress}</p>
-                <p><strong>Secret:</strong> ${wallet.secret}</p>
-                <p><strong>Balance:</strong> ${wallet.balance ? wallet.balance + ' XRP' : 'Undefined'}</p>
-                ${fundWalletButton}
-            </div>
-        `;
-    }).join('');
-}
 
-// Function to handle "Fund Wallet" button click
-function fundWallet(xAddress) {
-    console.log("Funding wallet: " + xAddress);
-    // Implement the logic to call the login API or a backend endpoint for funding the wallet
-    // Example: Making a request to a hypothetical '/fund_wallet' endpoint
-    fetch(`http://localhost:3000/fund_wallet?xAddress=${xAddress}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Wallet funded:', data);
-        showToast(`Wallet ${xAddress} funded successfully`);
-        // Update wallet balance locally or re-fetch wallets to reflect the new balance
-    })
-    .catch(error => {
-        console.error('Error funding wallet:', error);
-        showToast('Error funding wallet', 4000); // Longer duration for errors
-    });
-}
+        // Function to handle "Fund Wallet" button click
+        function fundWallet(xAddress) {
+            console.log("Funding wallet: " + xAddress);
+            // Implement the logic to call the login API or a backend endpoint for funding the wallet
+            // Example: Making a request to a hypothetical '/fund_wallet' endpoint
+            fetch(`https://xrpl-4866d5c10be3.herokuapp.comfund_wallet?xAddress=${xAddress}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Wallet funded:', data);
+                showToast(`Wallet ${xAddress} funded successfully`);
+                // Update wallet balance locally or re-fetch wallets to reflect the new balance
+            })
+            .catch(error => {
+                console.error('Error funding wallet:', error);
+                showToast('Error funding wallet', 4000); // Longer duration for errors
+            });
+        }
 
 
 
@@ -363,7 +368,7 @@ function fundWallet(xAddress) {
         document.getElementById('createWallet').addEventListener('click', async () => {
             showToast("Creating Test Wallet...");
             try {
-                const response = await fetch('http://localhost:3000/create_test_wallet', {
+                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.comcreate_test_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -391,7 +396,7 @@ function fundWallet(xAddress) {
 
             showToast(`Sending XRP to ${recipientAddress}...`);
             try {
-                const response = await fetch('http://localhost:3000/send_xrp', {
+                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.comsend_xrp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senderSecret, recipientAddress, amount })
@@ -409,7 +414,7 @@ function fundWallet(xAddress) {
         document.getElementById('createRealWallet').addEventListener('click', async () => {
             showToast("Creating Real Wallet...");
             try {
-                const response = await fetch('http://localhost:3000/create_real_wallet', {
+                const response = await fetch('https://xrpl-4866d5c10be3.herokuapp.comcreate_real_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });

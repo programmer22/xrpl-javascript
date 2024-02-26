@@ -16,11 +16,63 @@ app.use(express.static('public'));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws) => {
-    console.log('A client connected');
+async function fetchXrpData() {
+    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=XRP`;
+    const headers = {
+        'X-CMC_PRO_API_KEY': process.env.COINMARKETCAP_API_KEY,
+        'Accept': 'application/json'
+    };
 
-    ws.on('close', () => console.log('A client disconnected'));
+    try {
+        const response = await fetch(url, { method: 'GET', headers: headers });
+        const data = await response.json();
+
+        console.log("Complete API Response:", JSON.stringify(data, null, 2)); // Log the complete response
+
+        // Check if the expected data structure is present
+        if (!data.data || !data.data.XRP) {
+            console.error('Unexpected API response structure:', data);
+            return null;
+        }
+
+        return {
+            price: data.data.XRP.quote.USD.price,
+            marketCap: data.data.XRP.quote.USD.market_cap,
+            volume24h: data.data.XRP.quote.USD.volume_24h,
+            circulatingSupply: data.data.XRP.circulating_supply
+        };
+    } catch (error) {
+        console.error('Failed to fetch XRP data from CoinMarketCap:', error);
+        return null;
+    }
+}
+
+
+// WebSocket connection handler
+wss.on('connection', (ws) => {
+  console.log('A client connected');
+
+  // Fetch and send XRP data periodically or on specific events
+  const sendXrpData = async () => {
+    const xrpData = await fetchXrpData();
+    if (xrpData) {
+      ws.send(JSON.stringify({
+        type: 'xrpData',
+        data: xrpData
+      }));
+    }
+  };
+
+  // Example: send XRP data immediately and then every 5 minutes
+  sendXrpData();
+  const intervalId = setInterval(sendXrpData, 60000); // 60,000 ms = 1 minutes
+
+  ws.on('close', () => {
+    console.log('A client disconnected');
+    clearInterval(intervalId);
+  });
 });
+
 
 const getNewBalance = async (client, address) => {
     const accountInfo = await client.request({
