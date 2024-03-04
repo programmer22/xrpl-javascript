@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ledgerhq/hw-app-xrp": "^6.28.4",
+    "@ledgerhq/hw-transport-node-hid": "^6.28.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.4",
     "express": "^4.18.2",

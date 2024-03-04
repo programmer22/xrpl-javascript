@@ -3,6 +3,8 @@ const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
 const { Client, Wallet, xrpToDrops } = require('xrpl');
+const TransportNodeHid = require("@ledgerhq/hw-transport-node-hid").default;
+const XrpApp = require("@ledgerhq/hw-app-xrp").default;
 
 require('dotenv').config();
 
@@ -46,7 +48,6 @@ async function fetchXrpData() {
         return null;
     }
 }
-
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
@@ -161,7 +162,6 @@ app.post('/send_xrp', async (req, res) => {
     }
 });
 
-
 app.post('/create_real_wallet', async (req, res) => {
     // Replace the placeholder URL with the actual Mainnet WebSocket URL
     const client = new Client("wss://s1.ripple.com");
@@ -207,10 +207,85 @@ app.post('/fund_wallet', async (req, res) => {
     res.json({ success: true, message: `Wallet ${xAddress} funded successfully.` });
 });
 
+app.get('/get-ledger-xrp-balance', async (req, res) => {
+    const client = new Client("wss://s1.ripple.com");
+
+    try {
+        await client.connect();
+        console.log('Connected to the XRP Ledger');
+
+        const transport = await TransportNodeHid.create();
+        const app = new XrpApp(transport);
+        const result = await app.getAddress("44'/144'/0'/0/0");
+
+        console.log(`Address: ${result.address}`);
+
+        // Use the 'account_info' command to get the account details from the XRP Ledger
+        const accountInfo = await client.request({
+            command: 'account_info',
+            account: result.address,
+            ledger_index: 'validated'
+        });
+
+        console.log(`XRP Balance: ${accountInfo.result.account_data.Balance} drops`);
+
+        // XRP is stored as drops in the ledger. 1 XRP = 1,000,000 drops
+        const xrpBalance = accountInfo.result.account_data.Balance / 1000000;
+
+        res.json({ xrpBalance: xrpBalance, address: result.address });
+
+        await transport.close();
+        await client.disconnect();
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error getting XRP balance');
+    }
+});
+
+app.post('/send-xrp-from-ledger', async (req, res) => {
+    const { receiverAddress, amount } = req.body;
+
+    try {
+        // Connect to the XRP Ledger
+        const client = new Client("wss://s1.ripple.com");
+        await client.connect();
+
+        // Connect to the Ledger device
+        const transport = await TransportNodeHid.create();
+        const ledgerXrpApp = new XrpApp(transport);
+
+        // Get the Ledger device's XRP address
+        const { address } = await ledgerXrpApp.getAddress("44'/144'/0'/0/0");
+
+        // Prepare the transaction
+        const preparedTx = await client.autofill({
+            TransactionType: "Payment",
+            Account: address,
+            Amount: xrpToDrops(amount.toString()), // Convert amount to drops
+            Destination: receiverAddress,
+        });
+
+        const { tx_blob, hash } = await client.sign(preparedTx, ledgerXrpApp);
+
+        // Submit the signed transaction
+        const result = await client.submit(tx_blob);
+
+        await client.disconnect();
+        await transport.close();
+
+        res.json({ success: true, hash, result });
+    } catch (error) {
+        console.error('Error sending XRP from Ledger:', error);
+        res.status(500).json({ error: 'Failed to send XRP from Ledger', details: error.message });
+    }
+});
+
+
 
 server.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
+
 
 
 
